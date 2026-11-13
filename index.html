@@ -1,929 +1,431 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Play, Pause, RotateCcw, Settings, CheckCircle, Circle, Plus, Trash2, X, Clock, List, 
-  BookOpen, ToggleLeft, ToggleRight, Sun, Moon, Hash, CornerDownRight, Edit
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
-// --- Task Editing Modal Component ---
-// Görev düzenleme ve açıklama ekleme popup'ı
-const EditTaskModal = ({ task, onSave, onClose, tags, settings }) => {
-  const [currentTask, setCurrentTask] = useState(task);
-  // Modal içinde Pro Mode'un açılıp kapanması
-  const [isProModeInModal, setIsProModeInModal] = useState(task.lesson !== null); 
-  const [modalInputType, setModalInputType] = useState(task.type === 'page_range' ? 'page_range' : 'topic');
-  
-  const handleProModeToggle = () => {
-      setIsProModeInModal(prev => !prev);
-      
-      // Basic Mode'a geçiş (Pro'dan)
-      if (isProModeInModal) {
-           setCurrentTask(prev => ({ 
-              ...prev, 
-              lesson: null, 
-              source: null, 
-              detail: null, 
-              type: 'basic',
-              text: prev.detail || prev.text || '',
-          }));
-      } else {
-           // Pro Mode'a geçiş (Basic'ten)
-           setCurrentTask(prev => ({ 
-              ...prev, 
-              lesson: tags[0] || '', 
-              source: '', 
-              detail: '', 
-              type: modalInputType,
-              text: '', // Basic text'i temizle
-          }));
-      }
-  };
-  
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setCurrentTask(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const handleDetailTypeToggle = () => {
-      const newType = modalInputType === 'page_range' ? 'topic' : 'page_range';
-      setModalInputType(newType);
-      setCurrentTask(prev => ({ ...prev, type: newType, detail: '' }));
-  };
+  <title>NyxFocus — Alarm, Zamanlayıcı ve Pomodoro ile Derin Odaklanma</title>
+  <meta name="description" content="NyxFocus; alarm, zamanlayıcı, Pomodoro sayacı, odak sesleri ve görev listesini tek bir sade, cam yüzeyli arayüzde buluşturan üretkenlik ve odaklanma uygulamasıdır. NyxLabs ile.">
+  <meta name="keywords" content="pomodoro, odaklanma, üretkenlik, zamanlayıcı, alarm, beyaz gürültü, kahverengi gürültü, pembe gürültü, görev listesi, NyxFocus, NyxLabs">
+  <meta name="author" content="NyxLabs">
+  <meta name="robots" content="index, follow">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#07080C">
 
-  const handleSave = (e) => {
-    e.preventDefault();
-    
-    let finalTask = { ...currentTask };
-    
-    if (finalTask.lesson) {
-        // Pro Mode'da ise, sıra numarasını koru ve metni yeniden oluştur
-        const taskOrderMatch = finalTask.text.match(/^\d+ /);
-        const taskOrder = taskOrderMatch ? taskOrderMatch[0] : '';
-        finalTask.text = `${taskOrder} | ${finalTask.lesson} - ${finalTask.source} | ${finalTask.detail}`;
-    } else {
-        // Basic Mode'da ise, Pro alanlarını temizle ve text alanını kullan
-        finalTask.lesson = null;
-        finalTask.source = null;
-        finalTask.detail = null;
-        finalTask.type = 'basic';
-        finalTask.text = finalTask.text.trim();
-    }
-    
-    onSave(finalTask);
-  };
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="NyxFocus">
+  <meta property="og:locale" content="tr_TR">
+  <meta property="og:title" content="NyxFocus — Derin Odaklanma Platformu">
+  <meta property="og:description" content="Alarm, zamanlayıcı, Pomodoro, odak sesleri ve görev listesi: sakin ve sade bir odak alanı. NyxLabs ile.">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="NyxFocus — Derin Odaklanma Platformu">
+  <meta name="twitter:description" content="Alarm, zamanlayıcı, Pomodoro, odak sesleri ve görev listesi: sakin ve sade bir odak alanı.">
 
-  const inputBgColor = settings.theme === 'dark' ? 'bg-slate-900' : 'bg-gray-100';
-  const borderColor = settings.theme === 'dark' ? 'border-slate-600' : 'border-gray-300';
+  <!-- Dinamik SVG favicon (script.js aktif sekmeye göre rengini günceller) -->
+  <link id="favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 32 32'%3E%3Crect x='-4' y='-4' width='32' height='32' rx='9' fill='%2307080C'/%3E%3Cpath d='M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z' fill='none' stroke='%23E2C799' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <form onSubmit={handleSave} className="bg-slate-800 w-full max-w-xl rounded-2xl shadow-2xl border border-slate-700 animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-        
-        {/* Header */}
-        <div className="p-5 border-b border-slate-700 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Edit className="text-indigo-400" size={24} /> Görev Düzenle
-          </h2>
-          <button type="button" onClick={onClose} className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors">
-            <X size={24} />
-          </button>
-        </div>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body data-view="pomodoro">
 
-        {/* Content */}
-        <div className="p-5 overflow-y-auto space-y-5 custom-scrollbar">
-          
-          {/* Pro Mode Toggle in Edit */}
-          <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg border border-slate-700">
-              <span className="font-medium text-slate-300">Detaylı (Pro) Görev Modu</span>
-              <button type="button" onClick={handleProModeToggle} className="p-1 rounded-full transition-colors">
-                {currentTask.lesson ? (
-                  <ToggleRight size={32} className="text-emerald-500" />
-                ) : (
-                  <ToggleLeft size={32} className="text-slate-500" />
-                )}
-              </button>
-          </div>
+  <!-- SVG simge takımı: 24x24, ince çizgi (stroke-width 1.75) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-alarm" viewBox="0 0 24 24"><circle cx="12" cy="13" r="7.25"/><path d="M12 9.5v3.75l2.5 1.5"/><path d="M4.4 5.4 7.3 3M19.6 5.4 16.7 3"/></symbol>
+      <symbol id="i-timer" viewBox="0 0 24 24"><path d="M7 3.5h10M7 20.5h10"/><path d="M8 3.5c0 4.2 2.4 5.4 4 8.5-1.6 3.1-4 4.3-4 8.5M16 3.5c0 4.2-2.4 5.4-4 8.5 1.6 3.1 4 4.3 4 8.5"/></symbol>
+      <symbol id="i-pomodoro" viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 6V3.5"/><path d="M12 6.2c-1.2-1.4-2.9-1.8-4.4-1.2M12 6.2c1.2-1.4 2.9-1.8 4.4-1.2"/></symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8.5 5.5v13M15.5 5.5v13"/></symbol>
+      <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/></symbol>
+      <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol>
+      <symbol id="i-skip" viewBox="0 0 24 24"><path d="M5 5.5v13l9-6.5z"/><path d="M18.5 5.5v13"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12.5h10L18 7M9 7V4.5h6V7"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 21h4"/></symbol>
+      <symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></symbol>
+      <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4.5M7.5 9L12 4.5 16.5 9M5 15v4.5h14V15"/></symbol>
+      <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></symbol>
+    </defs>
+  </svg>
 
+  <!-- Dinamik arka plan ışıkları (script.js yönetir) -->
+  <div class="ambient" aria-hidden="true">
+    <div class="orb"></div>
+    <div class="orb"></div>
+    <div class="orb"></div>
+    <div class="orb"></div>
+  </div>
 
-          {/* Task Details */}
-          {currentTask.lesson ? (
-              /* PRO MODE EDIT FORM */
-              <div className="space-y-4">
-                  <div className="flex gap-3">
-                      {/* Ders Seçimi */}
-                      <select
-                        name="lesson"
-                        value={currentTask.lesson || tags[0]}
-                        onChange={handleInputChange}
-                        className={`flex-1 ${inputBgColor} border ${borderColor} rounded-lg p-3 text-white focus:ring-emerald-500 outline-none`}
-                        required
-                      >
-                        {tags.map(tag => (
-                          <option key={tag} value={tag}>{tag}</option>
-                        ))}
-                      </select>
-                      {/* Kaynak */}
-                      <input
-                          type="text"
-                          name="source"
-                          value={currentTask.source || ''}
-                          onChange={handleInputChange}
-                          placeholder="Kaynak (Kitap vs.)"
-                          className={`flex-1 ${inputBgColor} border ${borderColor} rounded-lg p-3 text-white placeholder-slate-500 focus:ring-emerald-500 outline-none`}
-                          required
-                        />
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    {/* Detay Inputu */}
-                    <input
-                      type="text"
-                      name="detail"
-                      value={currentTask.detail || ''}
-                      onChange={handleInputChange}
-                      placeholder={modalInputType === 'page_range' ? "Sayfa Aralığı (örn: 24 - 33)" : "Konu/Görev Başlığı"}
-                      className={`flex-1 ${inputBgColor} border ${borderColor} rounded-lg p-3 text-white placeholder-slate-500 focus:ring-emerald-500 outline-none`}
-                      required
-                    />
+  <a class="skip-link" href="#main" data-skip>Ana içeriğe geç</a>
 
-                    {/* Detail Type Toggle */}
-                    <button
-                      type="button"
-                      onClick={handleDetailTypeToggle}
-                      className={`bg-slate-700 hover:bg-slate-600 text-white p-3 rounded-lg flex items-center transition-colors text-sm font-medium whitespace-nowrap`}
-                    >
-                      <CornerDownRight size={18} className="mr-2" />
-                      {modalInputType === 'page_range' ? 'Sayfa' : 'Konu'}
-                    </button>
-                  </div>
-              </div>
-          ) : (
-              /* BASIC MODE EDIT FORM */
-              <div className="space-y-2">
-                  <label className="text-slate-300 text-sm font-medium">Görev Başlığı</label>
-                  <input
-                    type="text"
-                    name="text"
-                    value={currentTask.text || ''}
-                    onChange={handleInputChange}
-                    placeholder="Görev adını girin..."
-                    className={`w-full ${inputBgColor} border ${borderColor} rounded-lg p-3 text-white placeholder-slate-500 focus:ring-emerald-500 outline-none`}
-                    required
-                  />
-              </div>
-          )}
-          
-          {/* Açıklama/Notes Kısmı */}
-          <div className="space-y-2 pt-4 border-t border-slate-700">
-              <label className="text-slate-300 text-sm font-medium flex items-center gap-2">
-                  <BookOpen size={16} className="text-indigo-400" />
-                  Açıklama / Notlar (Opsiyonel)
-              </label>
-              <textarea
-                name="description"
-                value={currentTask.description || ''}
-                onChange={handleInputChange}
-                rows="4"
-                placeholder="Bu göreve özel notlarınızı buraya yazın..."
-                className={`w-full ${inputBgColor} border ${borderColor} rounded-lg p-3 text-white placeholder-slate-500 focus:ring-indigo-500 outline-none resize-none`}
-              ></textarea>
-          </div>
-
-        </div>
-        
-        {/* Footer */}
-        <div className="p-5 border-t border-slate-700 flex justify-end gap-3">
-          <button 
-            type="button" 
-            onClick={onClose}
-            className="px-6 py-3 rounded-xl font-bold text-slate-300 hover:bg-slate-700 transition-colors"
-          >
-            İptal
-          </button>
-          <button 
-            type="submit"
-            className="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-lg shadow-indigo-500/20"
-          >
-            Kaydet
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-};
-
-
-// --- Task Display Component ---
-// Görev listesini minimal göstermek için yardımcı bileşen
-const TaskDisplay = ({ task, index, startEditing, toggleTask, deleteTask, settings }) => {
-  const isPro = task.lesson !== null;
-  const taskNumber = index + 1;
-
-  return (
-      <div 
-        className={`group flex items-start justify-between p-4 rounded-xl border transition-all duration-200 cursor-pointer ${
-          task.completed 
-            ? 'bg-slate-900/30 border-slate-800 opacity-60' 
-            : 'bg-slate-700/50 border-slate-600 hover:border-indigo-500/50 hover:bg-slate-700'
-        }`}
-      >
-          <div className="flex items-start gap-4 flex-1 min-w-0">
-              {/* Toggle Button */}
-              <button 
-                onClick={(e) => { e.stopPropagation(); toggleTask(task.id); }}
-                className={`mt-1 transition-colors ${task.completed ? 'text-emerald-500' : 'text-slate-400 hover:text-emerald-400'}`}
-              >
-                {task.completed ? <CheckCircle size={24} /> : <Circle size={24} />}
-              </button>
-              
-              {/* Task Content (Clickable for editing) */}
-              <div onClick={() => startEditing(task.id)} className="flex flex-col min-w-0 pt-0.5 flex-1">
-                  {isPro && settings.isProMode ? (
-                      <>
-                          {/* Pro Mode Display: Minimal */}
-                          <p className={`text-xs font-medium ${task.completed ? 'text-slate-500' : 'text-indigo-400'} flex items-center gap-1`}>
-                              <Hash size={12} className="text-indigo-600" />
-                              {taskNumber} | {task.lesson} - {task.source}
-                          </p>
-                          <span className={`text-base break-words ${task.completed ? 'line-through text-slate-500' : 'text-slate-200'}`}>
-                              {task.detail}
-                          </span>
-                      </>
-                  ) : (
-                      <>
-                          {/* Basic Mode Display: Minimal */}
-                           <span className={`text-base font-medium break-words ${task.completed ? 'line-through text-slate-500' : 'text-slate-200'}`}>
-                              {task.text}
-                          </span>
-                      </>
-                  )}
-                  {task.description && !task.completed && (
-                      <p className="text-xs text-slate-500 mt-1 truncate max-w-full">
-                         <BookOpen size={12} className="inline mr-1 text-slate-600" />
-                         {task.description}
-                      </p>
-                  )}
-              </div>
-          </div>
-          
-          {/* Delete Button */}
-          <button 
-            onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
-            className="text-slate-500 hover:text-red-400 p-2 opacity-0 group-hover:opacity-100 transition-all"
-          >
-            <Trash2 size={18} />
-          </button>
+  <header class="site-header">
+    <div class="brand">
+      <svg class="brand-logo icon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg>
+      <div class="brand-text">
+        <h1 class="brand-title"><a class="brand-link" href="https://eypensare.github.io">NyxFocus</a></h1>
+        <a class="brand-sub" href="https://eypensare.github.io">with NyxLabs</a>
       </div>
-  );
-};
+    </div>
+    <div class="header-clock" aria-hidden="true">
+      <span class="clock-time" id="clock-time">00:00:00</span>
+      <span class="clock-date" id="clock-date">&nbsp;</span>
+    </div>
+  </header>
 
+  <main id="main" class="main" tabindex="-1">
 
-export default function App() {
-  // --- Sabit Veri ve State Yönetimi ---
-  
-  const initialTags = ['Matematik', 'Tarih', 'React', 'Kodlama', 'Edebiyat'];
-  
-  const [settings, setSettings] = useState({
-    work: 25,
-    shortBreak: 5,
-    longBreak: 15,
-    autoStart: false,
-    theme: 'dark', 
-    isProMode: false, // Varsayılan olarak Basit Mod
-  });
-
-  const [tags, setTags] = useState(initialTags);
-  const [newTag, setNewTag] = useState('');
-
-  const [mode, setMode] = useState('work');
-  const [timeLeft, setTimeLeft] = useState(settings.work * 60);
-  const [isActive, setIsActive] = useState(false);
-  
-  // Örnek Görevler (Açıklamalar eklendi)
-  const [tasks, setTasks] = useState([
-    { id: 1, type: 'basic', text: "E-postaları kontrol et (Basit Görev)", completed: false, lesson: null, source: null, detail: null, description: "Gelen kutusunu temizle ve acil olanlara cevap ver. Bu basit görev yaklaşık 10 dakika sürmeli." },
-    { id: 2, type: 'page_range', text: "2 | Matematik - Orjin | 24 - 33", completed: false, lesson: 'Matematik', source: 'Orjin', detail: '24 - 33', description: "Diferansiyel denklemlerin başlangıç alıştırmaları. İlk 5 sayfaya odaklan." },
-    { id: 3, type: 'topic', text: "3 | Tarih - Fatih | İstanbulun Fethi", completed: true, lesson: 'Tarih', source: 'Fatih', detail: 'İstanbulun Fethi', description: "Konuyu tekrar et ve önemli tarihleri not al. Bitirildi." },
-  ]);
-  
-  const [newTask, setNewTask] = useState({
-    text: '', 
-    lesson: initialTags[0], 
-    source: '', 
-    detail: '', 
-    inputType: 'page_range' 
-  });
-
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('timer');
-  const [editingTaskId, setEditingTaskId] = useState(null); // Düzenlenen görev ID'si
-
-  const timerRef = useRef(null);
-
-  // --- Theme Uygulama ---
-  useEffect(() => {
-    document.documentElement.classList.remove('dark', 'light');
-    document.documentElement.classList.add(settings.theme);
-  }, [settings.theme]);
-
-
-  // --- Timer Mantığı (Aynı kaldı) ---
-  useEffect(() => {
-    if (isActive && timeLeft > 0) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (timeLeft === 0) {
-      setIsActive(false);
-      clearInterval(timerRef.current);
-    }
-
-    return () => clearInterval(timerRef.current);
-  }, [isActive, timeLeft]);
-
-  useEffect(() => {
-    switch (mode) {
-      case 'work':
-        setTimeLeft(settings.work * 60);
-        break;
-      case 'shortBreak':
-        setTimeLeft(settings.shortBreak * 60);
-        break;
-      case 'longBreak':
-        setTimeLeft(settings.longBreak * 60);
-        break;
-      default:
-        break;
-    }
-    setIsActive(false);
-  }, [settings, mode]);
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
-
-  const toggleTimer = () => setIsActive(!isActive);
-  
-  const resetTimer = () => {
-    setIsActive(false);
-    if (mode === 'work') setTimeLeft(settings.work * 60);
-    else if (mode === 'shortBreak') setTimeLeft(settings.shortBreak * 60);
-    else setTimeLeft(settings.longBreak * 60);
-  };
-
-  // --- Görev Yöneticisi Mantığı ---
-
-  const handleNewTaskChange = (e) => {
-    const { name, value } = e.target;
-    setNewTask(prev => ({ ...prev, [name]: value }));
-  };
-
-  const toggleProTaskInputType = () => {
-    setNewTask(prev => ({
-      ...prev,
-      inputType: prev.inputType === 'page_range' ? 'topic' : 'page_range',
-      detail: ''
-    }));
-  };
-
-  const addTask = (e) => {
-    e.preventDefault();
-    
-    let newTaskItem;
-    const taskOrder = tasks.length + 1;
-    
-    if (settings.isProMode) {
-      if (!newTask.lesson || !newTask.source.trim() || !newTask.detail.trim()) return;
-
-      const detailText = newTask.detail.trim();
-      const type = newTask.inputType;
-      
-      const textDisplay = `${taskOrder} | ${newTask.lesson} - ${newTask.source.trim()} | ${detailText}`;
-
-      newTaskItem = {
-        id: Date.now(), 
-        type: type, 
-        text: textDisplay, 
-        completed: false, 
-        lesson: newTask.lesson, 
-        source: newTask.source.trim(), 
-        detail: detailText,
-        description: "",
-      };
-
-    } else { 
-      if (!newTask.text.trim()) return;
-      
-      newTaskItem = { 
-        id: Date.now(), 
-        type: 'basic', 
-        text: newTask.text.trim(), 
-        completed: false, 
-        lesson: null, 
-        source: null, 
-        detail: null,
-        description: "",
-      };
-    }
-    
-    setTasks([...tasks, newTaskItem]);
-    setNewTask(prev => ({ 
-      ...prev, 
-      text: '', 
-      source: '', 
-      detail: '',
-      lesson: settings.isProMode ? prev.lesson : tags[0] || '',
-    }));
-  };
-
-  const toggleTask = (id) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
-  };
-
-  const deleteTask = (id) => {
-    setTasks(tasks.filter(t => t.id !== id));
-  };
-
-  // --- Düzenleme Mantığı ---
-  const startEditing = (id) => {
-    setEditingTaskId(id);
-  };
-
-  const saveEditedTask = (editedTask) => {
-    setTasks(tasks.map(t => t.id === editedTask.id ? editedTask : t));
-    setEditingTaskId(null);
-  };
-
-  const closeEditing = () => {
-    setEditingTaskId(null);
-  };
-
-  const getTaskToEdit = () => tasks.find(t => t.id === editingTaskId);
-  
-  // --- Ayarlar ve Etiket Mantığı (Aynı kaldı) ---
-  
-  const handleSettingChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setSettings(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : (name === 'theme' ? value : parseInt(value) || 0)
-    }));
-  };
-
-  const toggleProMode = () => {
-    setSettings(prev => ({ ...prev, isProMode: !prev.isProMode }));
-    if (!settings.isProMode) {
-        setNewTask(prev => ({ 
-            ...prev,
-            inputType: 'page_range',
-            lesson: tags[0] || ''
-        }));
-    } else {
-        setNewTask(prev => ({ ...prev, inputType: 'simple' }));
-    }
-  };
-
-  const addTag = (e) => {
-    e.preventDefault();
-    const tagText = newTag.trim();
-    if (tagText && !tags.includes(tagText)) {
-      setTags(prev => [...prev, tagText]);
-      setNewTag('');
-    }
-  };
-
-  const deleteTag = (tagToDelete) => {
-    setTags(prev => prev.filter(tag => tag !== tagToDelete));
-  };
-
-  // --- Render Bileşenleri ---
-  
-  // Tailwind CSS'in arka plan ve metin renklerini tema state'ine göre dinamikleştirme
-  const bgColor = settings.theme === 'dark' ? 'bg-slate-900' : 'bg-gray-50';
-  const textColor = settings.theme === 'dark' ? 'text-slate-100' : 'text-gray-900';
-  const cardColor = settings.theme === 'dark' ? 'bg-slate-800' : 'bg-white';
-  const borderColor = settings.theme === 'dark' ? 'border-slate-700' : 'border-gray-200';
-  const inputBgColor = settings.theme === 'dark' ? 'bg-slate-900/50' : 'bg-gray-100';
-
-  return (
-    <div className={`min-h-screen ${bgColor} ${textColor} font-sans transition-colors duration-300`}>
-      
-      {/* Üst Bar (NyxLabs | Focus) */}
-      <header className={`p-4 border-b ${borderColor} flex justify-between items-center ${bgColor}/80 backdrop-blur-md sticky top-0 z-10`}>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30">
-            <Clock size={20} className="text-white" />
-          </div>
-          <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
-            NyxLabs | Focus {/* Uygulama Adı Güncellendi */}
-          </h1>
-        </div>
-        <button 
-          onClick={() => setIsSettingsOpen(true)}
-          className={`p-2 hover:${cardColor} rounded-full transition-colors text-slate-400 hover:text-white`}
-        >
-          <Settings size={24} />
-        </button>
+    <!-- ===================== ALARM ===================== -->
+    <section id="view-alarm" class="view" role="tabpanel" aria-labelledby="tab-alarm" hidden>
+      <header class="view-head">
+        <h2 class="view-title">Alarm</h2>
+        <p class="view-lead">Günün ritmini belirleyin. Alarmlarınız bu cihazda saklanır ve zamanı geldiğinde sizi nazikçe uyarır.</p>
       </header>
 
-      <main className="container mx-auto p-4 lg:p-8 max-w-6xl">
-        
-        {/* Grid Yapısı (Timer Kısmı Aynı Kaldı) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* SOL TARAF: TIMER */}
-          <div className={`lg:col-span-5 ${activeTab === 'timer' ? 'block' : 'hidden lg:block'}`}>
-            <div className={`${cardColor} rounded-3xl p-8 shadow-2xl shadow-black/20 ${borderColor} border relative overflow-hidden`}>
-              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+      <div class="grid grid-2">
+        <form id="alarm-form" class="card" novalidate autocomplete="off">
+          <h3 class="card-title">Yeni alarm</h3>
+          <div class="spin-row" role="group" aria-label="Alarm saati">
+            <div class="spin" id="alarm-hour" data-label="Saat" data-unit="saat" data-min="0" data-max="23" data-pad="2" data-wrap></div>
+            <span class="spin-sep" aria-hidden="true">:</span>
+            <div class="spin" id="alarm-minute" data-label="Dakika" data-unit="dakika" data-min="0" data-max="59" data-pad="2" data-wrap></div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="alarm-label">Alarm etiketi</label>
+            <input class="input" id="alarm-label" name="label" type="text" maxlength="40" placeholder="Örn. Toplantı, Mola">
+          </div>
+          <label class="check-row" for="alarm-repeat">
+            <span class="switch">
+              <input type="checkbox" id="alarm-repeat" role="switch">
+              <span class="switch-ui" aria-hidden="true"></span>
+            </span>
+            <span class="check-row-text">Her gün tekrarla</span>
+          </label>
+          <button type="submit" class="btn btn-primary btn-lg btn-block" id="alarm-add">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg>
+            <span>Alarm kur</span>
+          </button>
+        </form>
 
-              <div className={`flex justify-center gap-2 mb-12 ${inputBgColor} p-1 rounded-xl w-fit mx-auto`}>
-                {[
-                  { id: 'work', label: 'Odaklan' },
-                  { id: 'shortBreak', label: 'Kısa Mola' },
-                  { id: 'longBreak', label: 'Uzun Mola' }
-                ].map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => setMode(m.id)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
-                      mode === m.id 
-                        ? 'bg-indigo-600 text-white shadow-lg' 
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'
-                    }`}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
+        <div class="card">
+          <div class="card-head">
+            <h3 class="card-title">Kurulu alarmlar</h3>
+            <span class="card-meta" id="alarm-next">Alarm yok</span>
+          </div>
+          <p class="empty" id="alarm-empty">Henüz alarm kurmadınız. Soldaki formdan ilk alarmınızı ekleyin.</p>
+          <ul class="list" id="alarm-list" aria-label="Kurulu alarmlar"></ul>
+        </div>
+      </div>
+    </section>
 
-              <div className="text-center mb-12 relative">
-                <div className="text-[6rem] leading-none font-bold tabular-nums tracking-tight text-white drop-shadow-2xl">
-                  {formatTime(timeLeft)}
-                </div>
-                <p className="text-slate-400 mt-2 font-medium uppercase tracking-widest text-sm">
-                  {isActive ? 'Süre İşliyor...' : 'Hazır'}
-                </p>
-              </div>
+    <!-- ===================== ZAMANLAYICI ===================== -->
+    <section id="view-zamanlayici" class="view" role="tabpanel" aria-labelledby="tab-zamanlayici" hidden>
+      <header class="view-head">
+        <h2 class="view-title">Zamanlayıcı</h2>
+        <p class="view-lead">Süreyi kendiniz belirleyin ya da hazır önerilerden birini seçin. Süre dolduğunda ses ve bildirimle haberdar olursunuz.</p>
+      </header>
 
-              <div className="flex justify-center gap-6">
-                <button 
-                  onClick={toggleTimer}
-                  className={`w-20 h-20 rounded-2xl flex items-center justify-center transition-all duration-200 shadow-xl ${
-                    isActive 
-                      ? 'bg-slate-700 text-slate-200 hover:bg-slate-600 border border-slate-600' 
-                      : 'bg-indigo-500 text-white hover:bg-indigo-400 hover:scale-105 shadow-indigo-500/40'
-                  }`}
-                >
-                  {isActive ? <Pause size={32} fill="currentColor" /> : <Play size={32} fill="currentColor" className="ml-1" />}
-                </button>
-                
-                <button 
-                  onClick={resetTimer}
-                  className="w-20 h-20 rounded-2xl bg-slate-700 text-slate-300 flex items-center justify-center hover:bg-slate-600 hover:text-white transition-all border border-slate-600"
-                >
-                  <RotateCcw size={28} />
-                </button>
-              </div>
+      <div class="grid grid-2">
+        <div class="card ring-card" id="timer-card">
+          <div class="ring" role="timer" aria-label="Zamanlayıcı geri sayımı">
+            <svg viewBox="0 0 220 220" aria-hidden="true" focusable="false">
+              <circle class="ring-track" cx="110" cy="110" r="100"/>
+              <circle class="ring-bar" id="timer-bar" cx="110" cy="110" r="100" transform="rotate(-90 110 110)"/>
+            </svg>
+            <div class="ring-center">
+              <span class="digits digits-lg" id="timer-display">00:05:00</span>
+              <span class="ring-caption" id="timer-state">Hazır</span>
             </div>
           </div>
-
-          {/* SAĞ TARAF: GÖREVLER */}
-          <div className={`lg:col-span-7 ${activeTab === 'tasks' ? 'block' : 'hidden lg:block'}`}>
-            <div className={`${cardColor} rounded-3xl p-6 lg:p-8 shadow-2xl shadow-black/20 ${borderColor} border h-full min-h-[500px] flex flex-col`}>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                  <List className="text-emerald-400" />
-                  Görev Listesi
-                </h2>
-                <span className={`${settings.theme === 'dark' ? 'bg-slate-700 text-slate-300' : 'bg-gray-200 text-gray-700'} px-3 py-1 rounded-full text-xs font-bold`}>
-                  {tasks.filter(t => t.completed).length}/{tasks.length} Tamamlandı
-                </span>
-              </div>
-
-              {/* Görev Ekleme Formu */}
-              <form onSubmit={addTask} className="mb-6 space-y-3">
-                
-                {settings.isProMode ? (
-                  /* --- PRO MODE INPUT --- */
-                  <div className="space-y-3 p-3 bg-slate-900/50 rounded-xl border border-slate-700">
-                    <div className="flex gap-2">
-                        {/* Ders Seçimi */}
-                        <select
-                          name="lesson"
-                          value={newTask.lesson}
-                          onChange={handleNewTaskChange}
-                          className={`flex-1 ${inputBgColor} border ${borderColor} rounded-lg p-3 text-white focus:ring-emerald-500 outline-none`}
-                        >
-                          {tags.map(tag => (
-                            <option key={tag} value={tag}>{tag}</option>
-                          ))}
-                        </select>
-                        {/* Kaynak (Kitap vs.) */}
-                        <input
-                            type="text"
-                            name="source"
-                            value={newTask.source}
-                            onChange={handleNewTaskChange}
-                            placeholder="Kaynak (Orjin, Fizik Okulu...)"
-                            className={`flex-1 ${inputBgColor} border ${borderColor} rounded-lg p-3 text-white placeholder-slate-500 focus:ring-emerald-500 outline-none`}
-                          />
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      {/* Detay Inputu */}
-                      <input
-                        type="text"
-                        name="detail"
-                        value={newTask.detail}
-                        onChange={handleNewTaskChange}
-                        placeholder={newTask.inputType === 'page_range' ? "Sayfa Aralığı (örn: 24 - 33)" : "Konu/Görev Başlığı (örn: Kareköklü)"}
-                        className={`flex-1 ${inputBgColor} border ${borderColor} rounded-lg p-3 text-white placeholder-slate-500 focus:ring-emerald-500 outline-none`}
-                      />
-
-                      {/* Ek Tuş (Sayfa/Konu Toggle) */}
-                      <button
-                        type="button"
-                        onClick={toggleProTaskInputType}
-                        className={`bg-slate-700 hover:bg-slate-600 text-white p-3 rounded-lg flex items-center transition-colors text-sm font-medium whitespace-nowrap`}
-                        title={newTask.inputType === 'page_range' ? 'Konu/Görev Moduna Geç' : 'Sayfa Aralığı Moduna Geç'}
-                      >
-                        <CornerDownRight size={18} className="mr-2" />
-                        {newTask.inputType === 'page_range' ? 'Sayfa' : 'Konu'}
-                      </button>
-                       {/* Basit Moda Dönüş Tuşu */}
-                       <button
-                            type="button"
-                            onClick={() => setSettings(prev => ({...prev, isProMode: false}))}
-                            className="bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-lg font-bold transition-colors whitespace-nowrap"
-                            title="Basit görev moduna geç"
-                        >
-                            <X size={20} />
-                        </button>
-                      {/* Ekle Butonu */}
-                      <button 
-                        type="submit"
-                        className="bg-emerald-500 hover:bg-emerald-400 text-white p-3 rounded-lg transition-colors"
-                        title="Görevi Ekle"
-                      >
-                        <Plus size={20} />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  /* --- BASİT MODE INPUT --- */
-                  <div className="flex gap-2 group">
-                    <input
-                      type="text"
-                      name="text"
-                      value={newTask.text}
-                      onChange={handleNewTaskChange}
-                      placeholder="Yeni bir görev ekle..."
-                      className={`flex-1 ${inputBgColor} text-white placeholder-slate-500 border ${borderColor} rounded-xl py-4 pl-5 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all`}
-                    />
-                     {/* Gelişmiş Moda Geçiş Tuşu */}
-                    <button
-                        type="button"
-                        onClick={() => setSettings(prev => ({...prev, isProMode: true}))}
-                        className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold transition-colors shadow-lg shadow-indigo-500/20 whitespace-nowrap"
-                        title="Gelişmiş Ders/Sayfa görev moduna geç"
-                    >
-                        Gelişmiş
-                    </button>
-                    <button 
-                      type="submit"
-                      className="bg-emerald-500 hover:bg-emerald-400 text-white p-2 rounded-xl transition-colors"
-                      title="Görevi Ekle"
-                    >
-                      <Plus size={20} />
-                    </button>
-                  </div>
-                )}
-              </form>
-
-              {/* Liste */}
-              <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
-                {tasks.length === 0 && (
-                  <div className="text-center text-slate-500 py-10">
-                    <p>Henüz görev eklemedin.</p>
-                    <p className="text-sm mt-2">Hadi işe koyulalım!</p>
-                  </div>
-                )}
-                
-                {tasks.map((task, index) => (
-                  <TaskDisplay 
-                    key={task.id} 
-                    task={task} 
-                    index={index} 
-                    startEditing={startEditing}
-                    toggleTask={toggleTask}
-                    deleteTask={deleteTask}
-                    settings={settings}
-                  />
-                ))}
-              </div>
-            </div>
+          <div class="btn-row">
+            <button type="button" class="btn btn-primary btn-lg" id="timer-toggle">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-play"/></svg>
+              <span>Başlat</span>
+            </button>
+            <button type="button" class="btn btn-lg" id="timer-reset" aria-label="Zamanlayıcıyı sıfırla">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-reset"/></svg>
+              <span>Sıfırla</span>
+            </button>
           </div>
         </div>
-      </main>
 
-      {/* Mobil Tab Bar (Aynı kaldı) */}
-      <div className={`lg:hidden fixed bottom-0 left-0 right-0 ${cardColor} border-t ${borderColor} flex p-2 justify-around z-20 pb-safe`}>
-        <button 
-          onClick={() => setActiveTab('timer')}
-          className={`flex flex-col items-center gap-1 p-2 rounded-lg w-full ${activeTab === 'timer' ? 'text-indigo-400 bg-slate-700' : 'text-slate-400'}`}
-        >
-          <Clock size={24} />
-          <span className="text-xs font-medium">Timer</span>
-        </button>
-        <button 
-          onClick={() => setActiveTab('tasks')}
-          className={`flex flex-col items-center gap-1 p-2 rounded-lg w-full ${activeTab === 'tasks' ? 'text-emerald-400 bg-slate-700' : 'text-slate-400'}`}
-        >
-          <List size={24} />
-          <span className="text-xs font-medium">Görevler</span>
-        </button>
+        <div class="card">
+          <h3 class="card-title">Süreyi ayarla</h3>
+          <div class="spin-row" role="group" aria-label="Zamanlayıcı süresi">
+            <div class="spin" id="timer-h" data-label="Saat" data-unit="saat" data-min="0" data-max="99" data-pad="2"></div>
+            <span class="spin-sep" aria-hidden="true">:</span>
+            <div class="spin" id="timer-m" data-label="Dakika" data-unit="dakika" data-min="0" data-max="59" data-pad="2"></div>
+            <span class="spin-sep" aria-hidden="true">:</span>
+            <div class="spin" id="timer-s" data-label="Saniye" data-unit="saniye" data-min="0" data-max="59" data-pad="2"></div>
+          </div>
+          <h3 class="card-title card-title-sm">Hızlı öneriler</h3>
+          <div class="chips" role="group" aria-label="Hızlı süre önerileri" id="timer-presets">
+            <button type="button" class="chip" data-minutes="5" aria-pressed="false">5 dk</button>
+            <button type="button" class="chip" data-minutes="10" aria-pressed="false">10 dk</button>
+            <button type="button" class="chip" data-minutes="15" aria-pressed="false">15 dk</button>
+            <button type="button" class="chip" data-minutes="30" aria-pressed="false">30 dk</button>
+            <button type="button" class="chip" data-minutes="45" aria-pressed="false">45 dk</button>
+          </div>
+          <p class="hint">Rakamların üzerine tıklayıp doğrudan yazabilir, <kbd>↑</kbd> <kbd>↓</kbd> tuşlarını veya + / − düğmelerini kullanabilirsiniz.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== POMODORO ===================== -->
+    <section id="view-pomodoro" class="view" role="tabpanel" aria-labelledby="tab-pomodoro" hidden>
+      <header class="view-head">
+        <h2 class="view-title">Pomodoro</h2>
+        <p class="view-lead">Odaklan, nefes al, tekrarla. Seanslarınızı görevlerinizle ve odak sesleriyle birlikte yönetin.</p>
+      </header>
+
+      <div class="grid grid-pomo">
+        <div class="card ring-card" id="pomo-card" data-mode="focus">
+          <div class="segmented" role="group" aria-label="Seans türü" id="pomo-modes">
+            <button type="button" data-mode="focus" aria-pressed="true">Odak</button>
+            <button type="button" data-mode="short" aria-pressed="false">Kısa Mola</button>
+            <button type="button" data-mode="long" aria-pressed="false">Uzun Mola</button>
+          </div>
+          <div class="ring" role="timer" aria-label="Pomodoro geri sayımı">
+            <svg viewBox="0 0 220 220" aria-hidden="true" focusable="false">
+              <circle class="ring-track" cx="110" cy="110" r="100"/>
+              <circle class="ring-bar" id="pomo-bar" cx="110" cy="110" r="100" transform="rotate(-90 110 110)"/>
+            </svg>
+            <div class="ring-center">
+              <span class="digits digits-xl" id="pomo-display">25:00</span>
+              <span class="ring-caption" id="pomo-state">Odak · Hazır</span>
+            </div>
+          </div>
+          <div class="dots" id="pomo-dots" role="img" aria-label="Seans ilerlemesi"></div>
+          <p class="active-task" id="pomo-active-task">Aktif görev seçilmedi</p>
+          <div class="btn-row">
+            <button type="button" class="btn btn-primary btn-lg" id="pomo-toggle">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-play"/></svg>
+              <span>Başlat</span>
+            </button>
+            <button type="button" class="btn btn-icon btn-lg" id="pomo-reset" aria-label="Sayacı sıfırla" title="Sıfırla">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-reset"/></svg>
+            </button>
+            <button type="button" class="btn btn-icon btn-lg" id="pomo-skip" aria-label="Sonraki seansa geç" title="Sonraki seans">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-skip"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="stack">
+          <section class="card" aria-labelledby="mixer-title">
+            <div class="card-head">
+              <h3 class="card-title" id="mixer-title">Odak sesleri</h3>
+              <span class="card-meta">Web Audio ile üretilir</span>
+            </div>
+            <ul class="mixer" id="mixer">
+              <li class="mix-row" data-noise="white">
+                <span class="switch">
+                  <input type="checkbox" role="switch" id="noise-white" aria-label="Beyaz gürültüyü aç veya kapat">
+                  <span class="switch-ui" aria-hidden="true"></span>
+                </span>
+                <label class="mix-info" for="noise-white">
+                  <span class="mix-name">Beyaz Gürültü</span>
+                  <span class="mix-desc">Parlak ve eşit yoğunluklu</span>
+                </label>
+                <input class="range" type="range" min="0" max="100" value="40" aria-label="Beyaz gürültü ses seviyesi" data-noise-vol="white">
+              </li>
+              <li class="mix-row" data-noise="brown">
+                <span class="switch">
+                  <input type="checkbox" role="switch" id="noise-brown" aria-label="Kahverengi gürültüyü aç veya kapat">
+                  <span class="switch-ui" aria-hidden="true"></span>
+                </span>
+                <label class="mix-info" for="noise-brown">
+                  <span class="mix-name">Kahverengi Gürültü</span>
+                  <span class="mix-desc">Derin, yumuşak ve gürleyen</span>
+                </label>
+                <input class="range" type="range" min="0" max="100" value="50" aria-label="Kahverengi gürültü ses seviyesi" data-noise-vol="brown">
+              </li>
+              <li class="mix-row" data-noise="pink">
+                <span class="switch">
+                  <input type="checkbox" role="switch" id="noise-pink" aria-label="Pembe gürültüyü aç veya kapat">
+                  <span class="switch-ui" aria-hidden="true"></span>
+                </span>
+                <label class="mix-info" for="noise-pink">
+                  <span class="mix-name">Pembe Gürültü</span>
+                  <span class="mix-desc">Dengeli, yağmura benzer</span>
+                </label>
+                <input class="range" type="range" min="0" max="100" value="40" aria-label="Pembe gürültü ses seviyesi" data-noise-vol="pink">
+              </li>
+            </ul>
+          </section>
+
+          <section class="card" aria-labelledby="tasks-title">
+            <div class="card-head">
+              <h3 class="card-title" id="tasks-title">Görevler</h3>
+              <span class="card-meta" id="tasks-count">0 / 0</span>
+            </div>
+            <form id="task-form" class="inline-form" autocomplete="off" novalidate>
+              <label class="sr-only" for="task-input">Yeni görev</label>
+              <input class="input" id="task-input" type="text" maxlength="80" placeholder="Bu seansta ne yapacaksınız?">
+              <button type="submit" class="btn btn-icon" aria-label="Görevi ekle" title="Ekle">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg>
+              </button>
+            </form>
+            <p class="empty" id="task-empty">Görev listeniz boş. Bir görev ekleyip aktif görev olarak seçin.</p>
+            <ul class="list task-list" id="task-list" aria-label="Görev listesi"></ul>
+            <div class="card-foot" id="task-foot" hidden>
+              <button type="button" class="btn btn-ghost btn-sm" id="task-clear">Tamamlananları temizle</button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== AYARLAR ===================== -->
+    <section id="view-ayarlar" class="view" role="tabpanel" aria-labelledby="tab-ayarlar" hidden>
+      <header class="view-head">
+        <h2 class="view-title">Ayarlar</h2>
+        <p class="view-lead">Süreleri, bildirimleri ve bildirim sesini kendinize göre düzenleyin. Tüm tercihler bu cihazda saklanır.</p>
+      </header>
+
+      <div class="grid grid-2">
+        <section class="card" aria-labelledby="set-pomo-title">
+          <h3 class="card-title" id="set-pomo-title">Pomodoro süreleri</h3>
+          <div class="spin-grid">
+            <div class="spin" id="set-focus" data-label="Odak süresi" data-unit="dk odak" data-min="1" data-max="180" data-pad="2"></div>
+            <div class="spin" id="set-short" data-label="Kısa mola süresi" data-unit="dk kısa mola" data-min="1" data-max="60" data-pad="2"></div>
+            <div class="spin" id="set-long" data-label="Uzun mola süresi" data-unit="dk uzun mola" data-min="1" data-max="120" data-pad="2"></div>
+            <div class="spin" id="set-every" data-label="Uzun mola aralığı" data-unit="seansta bir" data-min="2" data-max="8" data-pad="1"></div>
+          </div>
+          <label class="check-row" for="set-autostart">
+            <span class="switch">
+              <input type="checkbox" id="set-autostart" role="switch">
+              <span class="switch-ui" aria-hidden="true"></span>
+            </span>
+            <span class="check-row-text">Sonraki seansı otomatik başlat</span>
+          </label>
+        </section>
+
+        <section class="card" aria-labelledby="set-notif-title">
+          <h3 class="card-title" id="set-notif-title">Bildirimler</h3>
+          <div class="perm" id="perm-box">
+            <span class="perm-dot" id="perm-dot" aria-hidden="true"></span>
+            <p class="perm-text" id="perm-text" aria-live="polite">Bildirim izni denetleniyor…</p>
+          </div>
+          <div class="btn-row btn-row-start">
+            <button type="button" class="btn" id="perm-request">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-bell"/></svg>
+              <span>Bildirim izni ver</span>
+            </button>
+          </div>
+          <div class="field">
+            <label class="field-label" for="set-volume">Bildirim sesi seviyesi</label>
+            <div class="range-line">
+              <svg class="icon icon-sm" aria-hidden="true" focusable="false"><use href="#i-volume"/></svg>
+              <input class="range" type="range" id="set-volume" min="0" max="100" value="80">
+              <span class="range-value" id="set-volume-out" aria-hidden="true">80%</span>
+            </div>
+          </div>
+          <button type="button" class="btn btn-primary btn-block" id="test-notify">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-bell"/></svg>
+            <span>Bildirimi ve Sesi Test Et</span>
+          </button>
+        </section>
       </div>
 
-      {/* AYARLAR MODALI (Ayarlar kısmı aynı kaldı) */}
-      {isSettingsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className={`bg-slate-800 w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-700 animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]`}>
-            
-            <div className={`p-6 border-b border-slate-700 flex justify-between items-center ${cardColor} rounded-t-2xl`}>
-              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                <Settings className="text-indigo-400" />
-                Uygulama Ayarları
-              </h2>
-              <button 
-                onClick={() => setIsSettingsOpen(false)}
-                className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="p-6 lg:p-8 overflow-y-auto space-y-8 custom-scrollbar">
-              
-              <section className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-4 border-b border-slate-700">
-                
-                <div>
-                  <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-wider mb-3">Tema Seçimi</h3>
-                  <div className="flex gap-2 p-1 bg-slate-900 rounded-lg">
-                    <button
-                      onClick={() => handleSettingChange({target: {name: 'theme', value: 'dark'}})}
-                      className={`flex-1 p-3 rounded-md transition-colors flex items-center justify-center ${settings.theme === 'dark' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}
-                    >
-                      <Moon size={20} className="mr-2" /> Koyu
-                    </button>
-                    <button
-                      onClick={() => handleSettingChange({target: {name: 'theme', value: 'light'}})}
-                      className={`flex-1 p-3 rounded-md transition-colors flex items-center justify-center ${settings.theme === 'light' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}
-                    >
-                      <Sun size={20} className="mr-2" /> Açık
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider mb-3">Pro Mode</h3>
-                  <div className={`p-3 rounded-lg flex items-center justify-between ${inputBgColor} border ${borderColor}`}>
-                    <span className="font-medium">Detaylı Görev Girişi</span>
-                    <button 
-                      onClick={toggleProMode} 
-                      className="p-1 rounded-full transition-colors"
-                    >
-                      {settings.isProMode ? (
-                        <ToggleRight size={32} className="text-emerald-500" />
-                      ) : (
-                        <ToggleLeft size={32} className="text-slate-500" />
-                      )}
-                    </button>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-2">Açıldığında görevler Ders/Kaynak/Sayfa formatına geçer.</p>
-                </div>
-              </section>
-
-              <section>
-                <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-wider mb-4">Zamanlayıcı (Dakika)</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-slate-300 text-sm font-medium">Odaklanma</label>
-                    <input 
-                      type="number" 
-                      name="work" 
-                      value={settings.work} 
-                      onChange={handleSettingChange}
-                      min="1"
-                      className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-slate-300 text-sm font-medium">Kısa Mola</label>
-                    <input 
-                      type="number" 
-                      name="shortBreak" 
-                      value={settings.shortBreak} 
-                      onChange={handleSettingChange}
-                      min="1"
-                      className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-slate-300 text-sm font-medium">Uzun Mola</label>
-                    <input 
-                      type="number" 
-                      name="longBreak" 
-                      value={settings.longBreak} 
-                      onChange={handleSettingChange}
-                      min="1"
-                      className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all"
-                    />
-                  </div>
-                </div>
-              </section>
-              
-              <section className="pt-4 border-t border-slate-700">
-                <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider mb-4">Etiketler (Dersler)</h3>
-                
-                <form onSubmit={addTag} className="flex gap-2 mb-6">
-                  <input
-                    type="text"
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    placeholder="Yeni ders adı (örn: Biyoloji)"
-                    className={`flex-1 ${inputBgColor} border ${borderColor} rounded-lg p-3 text-white placeholder-slate-500 focus:ring-emerald-500 outline-none`}
-                  />
-                  <button 
-                    type="submit"
-                    className="bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2 rounded-lg font-bold transition-colors flex items-center"
-                  >
-                    <Plus size={20} className="mr-1" /> Ekle
-                  </button>
-                </form>
-
-                <div className="flex flex-wrap gap-3">
-                  {tags.map((tag) => (
-                    <div 
-                      key={tag} 
-                      className="flex items-center bg-slate-700 text-slate-200 px-4 py-2 rounded-full text-sm font-medium border border-slate-600"
-                    >
-                      {tag}
-                      <button 
-                        onClick={() => deleteTag(tag)}
-                        className="ml-2 text-slate-400 hover:text-red-400"
-                        title="Etiketi Sil"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-            </div>
-
-            <div className="p-6 border-t border-slate-700 bg-slate-800 rounded-b-2xl flex justify-end">
-              <button 
-                onClick={() => setIsSettingsOpen(false)}
-                className="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-lg shadow-indigo-500/20"
-              >
-                Kapat
-              </button>
-            </div>
-
-          </div>
+      <section class="card card-wide" aria-labelledby="studio-title">
+        <div class="card-head">
+          <h3 class="card-title" id="studio-title">Bildirim sesi stüdyosu</h3>
+          <span class="card-meta" id="studio-usage">Depolama: 0 KB</span>
         </div>
-      )}
+        <p class="hint hint-top">Seçtiğiniz ses; tüm alarm, zamanlayıcı ve Pomodoro bitişlerinde çalar.</p>
+        <ul class="sound-list" id="sound-list" role="radiogroup" aria-label="Bildirim sesi seçimi"></ul>
 
-      {/* TASK EDITING MODAL */}
-      {editingTaskId && (
-          <EditTaskModal 
-              task={getTaskToEdit()}
-              onSave={saveEditedTask}
-              onClose={closeEditing}
-              tags={tags}
-              settings={settings}
-          />
-      )}
+        <div class="grid grid-2 studio-forms">
+          <form class="subcard" id="sound-url-form" novalidate autocomplete="off">
+            <h4 class="subcard-title"><svg class="icon icon-sm" aria-hidden="true" focusable="false"><use href="#i-link"/></svg> MP3 bağlantısı ekle</h4>
+            <div class="field">
+              <label class="field-label" for="sound-url-name">Ses adı</label>
+              <input class="input" id="sound-url-name" type="text" maxlength="40" placeholder="Örn. Sabah zili">
+            </div>
+            <div class="field">
+              <label class="field-label" for="sound-url">MP3 bağlantısı</label>
+              <input class="input" id="sound-url" type="url" inputmode="url" placeholder="https://ornek.com/ses.mp3">
+            </div>
+            <div class="btn-row btn-row-start">
+              <button type="button" class="btn" id="sound-url-preview">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-play"/></svg>
+                <span>Önizle / Dinle</span>
+              </button>
+              <button type="submit" class="btn btn-primary">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg>
+                <span>Listeye ekle</span>
+              </button>
+            </div>
+          </form>
 
-      <style>{`
-        /* Global stil tanımları, tema değişimine uyumlu */
-        .dark .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
-        
-        .light .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
-        .light .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .light .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+          <form class="subcard" id="sound-file-form" novalidate autocomplete="off">
+            <h4 class="subcard-title"><svg class="icon icon-sm" aria-hidden="true" focusable="false"><use href="#i-upload"/></svg> Cihazdan ses yükle</h4>
+            <div class="field">
+              <label class="field-label" for="sound-file-name">Ses adı (isteğe bağlı)</label>
+              <input class="input" id="sound-file-name" type="text" maxlength="40" placeholder="Dosya adı kullanılır">
+            </div>
+            <div class="field">
+              <span class="field-label" id="sound-file-label">MP3 / WAV dosyası</span>
+              <label class="file-drop" for="sound-file">
+                <input class="file-input" type="file" id="sound-file" accept="audio/*,.mp3,.wav" aria-describedby="sound-file-hint">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-upload"/></svg>
+                <span class="file-drop-text" id="sound-file-text">Dosya seçin</span>
+              </label>
+              <p class="hint" id="sound-file-hint">En fazla 2 MB. Dosya tarayıcınızın localStorage alanına kaydedilir.</p>
+            </div>
+          </form>
+        </div>
+      </section>
+    </section>
+  </main>
 
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-        }
-        .pb-safe {
-          padding-bottom: env(safe-area-inset-bottom);
-        }
-      `}</style>
+  <!-- Gezinme barı -->
+  <nav class="dock" aria-label="Ana gezinme">
+    <div class="dock-list" id="dock-list" role="tablist" aria-label="Bölümler">
+      <span class="dock-indicator" aria-hidden="true"></span>
+      <a class="dock-item" id="tab-alarm" href="#alarm" role="tab" aria-controls="view-alarm" aria-label="Alarm" data-label="Alarm" data-route="alarm">
+        <svg class="icon icon-nav" aria-hidden="true" focusable="false"><use href="#i-alarm"/></svg>
+      </a>
+      <a class="dock-item" id="tab-zamanlayici" href="#zamanlayici" role="tab" aria-controls="view-zamanlayici" aria-label="Zamanlayıcı" data-label="Zamanlayıcı" data-route="zamanlayici">
+        <svg class="icon icon-nav" aria-hidden="true" focusable="false"><use href="#i-timer"/></svg>
+      </a>
+      <a class="dock-item" id="tab-pomodoro" href="#pomodoro" role="tab" aria-controls="view-pomodoro" aria-label="Pomodoro" data-label="Pomodoro" data-route="pomodoro">
+        <svg class="icon icon-nav" aria-hidden="true" focusable="false"><use href="#i-pomodoro"/></svg>
+      </a>
+      <a class="dock-item" id="tab-ayarlar" href="#ayarlar" role="tab" aria-controls="view-ayarlar" aria-label="Ayarlar" data-label="Ayarlar" data-route="ayarlar">
+        <svg class="icon icon-nav" aria-hidden="true" focusable="false"><use href="#i-settings"/></svg>
+      </a>
     </div>
-  );
-}
+  </nav>
+
+  <!-- Alarm çalıyor penceresi -->
+  <div class="overlay" id="ring-overlay" hidden>
+    <div class="card ring-dialog" role="alertdialog" aria-modal="true" aria-labelledby="ring-title" aria-describedby="ring-desc">
+      <div class="ring-bell" aria-hidden="true"><svg class="icon" focusable="false"><use href="#i-bell"/></svg></div>
+      <h2 class="ring-title" id="ring-title">Alarm</h2>
+      <p class="ring-desc" id="ring-desc"></p>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary btn-lg" id="ring-stop">Durdur</button>
+        <button type="button" class="btn btn-lg" id="ring-snooze">Ertele (5 dk)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast bildirimleri ve ekran okuyucu duyuruları -->
+  <div class="toasts" id="toasts" aria-live="polite" aria-relevant="additions" role="region" aria-label="Bildirimler"></div>
+  <p class="sr-only" id="sr-live" aria-live="polite" aria-atomic="true"></p>
+
+  <noscript><p class="noscript">NyxFocus'u kullanmak için JavaScript'i etkinleştirmeniz gerekir.</p></noscript>
+</body>
+</html>
