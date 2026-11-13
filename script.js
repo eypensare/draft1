@@ -78,6 +78,11 @@
     return parts.join(' ');
   }
 
+  /** Metindeki sayı ve saat gruplarını .num sınıfıyla sarar */
+  function withNums(text) {
+    return String(text).split(/(\d+(?:[:.,]\d+)*)/).filter(Boolean).map((p) => (/^\d/.test(p) ? h('span', { class: 'num' }, p) : p));
+  }
+
   /** Küçük olay yayıncısı */
   const Bus = {
     map: new Map(),
@@ -172,8 +177,8 @@
       const el = h('div', { class: `toast toast-${type}`, role: type === 'error' ? 'alert' : 'status' },
         h('span', { class: 'toast-icon' }, icon(iconName)),
         h('div', { class: 'toast-body' },
-          h('strong', { class: 'toast-title' }, title),
-          message ? h('span', { class: 'toast-msg' }, message) : null),
+          h('strong', { class: 'toast-title' }, ...withNums(title)),
+          message ? h('span', { class: 'toast-msg' }, ...withNums(message)) : null),
         h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Bildirimi kapat', onclick: () => dismiss() }, icon('x')));
       let timer = 0;
       let gone = false;
@@ -930,7 +935,10 @@
       const t = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
       this.timeEl.textContent = t;
       const day = this.dateFmt.format(now);
-      if (this.dateEl.textContent !== day) this.dateEl.textContent = day;
+      if (this._lastDay !== day) {
+        this._lastDay = day;
+        this.dateEl.replaceChildren(...withNums(day));
+      }
       Bus.emit('second', now);
       setTimeout(() => this.tick(), 1000 - now.getMilliseconds() + 5);
     },
@@ -1071,7 +1079,8 @@
     updateNext() {
       const now = new Date();
       const times = this.alarms.filter((a) => a.enabled).map((a) => this.nextOccurrence(a, now).getTime() - now.getTime());
-      this.nextEl.textContent = times.length ? `Sıradaki: ${this.fmtRemaining(Math.min(...times))} sonra` : 'Aktif alarm yok';
+      if (times.length) this.nextEl.replaceChildren('Sıradaki: ', h('span', { class: 'num' }, this.fmtRemaining(Math.min(...times))), ' sonra');
+      else this.nextEl.textContent = 'Aktif alarm yok';
     },
 
     tick(now) {
@@ -1109,13 +1118,15 @@
     showOverlay() {
       const n = this.ringing.length;
       $('#ring-title').textContent = n === 1 ? this.ringing[0].label : `${n} alarm çalıyor`;
-      $('#ring-desc').textContent = n === 1 ? `Saat ${this.ringing[0].time}` : this.ringing.map((r) => `${r.label} (${r.time})`).join(', ');
+      const descEl = $('#ring-desc');
+      if (n === 1) descEl.replaceChildren('Saat ', h('span', { class: 'num' }, this.ringing[0].time));
+      else descEl.replaceChildren(...this.ringing.flatMap((r, i) => [i ? ', ' : '', r.label, ' (', h('span', { class: 'num' }, r.time), ')']));
       if (this.overlay.hidden) {
         this.prevFocus = document.activeElement;
         this.overlay.hidden = false;
         $('#ring-stop').focus();
       }
-      Announcer.say(`Alarm çalıyor. ${$('#ring-title').textContent}. ${$('#ring-desc').textContent}`);
+      Announcer.say(`Alarm çalıyor. ${$('#ring-title').textContent}. ${descEl.textContent}`);
     },
 
     hideOverlay() {
@@ -1632,7 +1643,7 @@
       const selected = Settings.get('soundId');
       this.listEl.replaceChildren(...Sounds.all().map((s) => this.soundItem(s, s.id === selected)));
       const kb = Math.round(Sounds.usageBytes() / 1024);
-      this.usageEl.textContent = `Özel sesler: ${kb} KB`;
+      this.usageEl.replaceChildren('Özel sesler: ', h('span', { class: 'num' }, `${kb} KB`));
     },
 
     soundItem(s, selected) {

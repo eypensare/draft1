@@ -26,7 +26,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap">
   <link rel="stylesheet" href="style.css">
   <script src="script.js" defer></script>
 </head>
@@ -267,7 +267,7 @@
           <section class="card" aria-labelledby="tasks-title">
             <div class="card-head">
               <h3 class="card-title" id="tasks-title">Görevler</h3>
-              <span class="card-meta" id="tasks-count">0 / 0</span>
+              <span class="card-meta num" id="tasks-count">0 / 0</span>
             </div>
             <form id="task-form" class="inline-form" autocomplete="off" novalidate>
               <label class="sr-only" for="task-input">Yeni görev</label>
@@ -341,7 +341,7 @@
       <section class="card card-wide" aria-labelledby="studio-title">
         <div class="card-head">
           <h3 class="card-title" id="studio-title">Bildirim sesi stüdyosu</h3>
-          <span class="card-meta" id="studio-usage">Depolama: 0 KB</span>
+          <span class="card-meta" id="studio-usage">Depolama: <span class="num">0 KB</span></span>
         </div>
         <p class="hint hint-top">Seçtiğiniz ses; tüm alarm, zamanlayıcı ve Pomodoro bitişlerinde çalar.</p>
         <ul class="sound-list" id="sound-list" role="radiogroup" aria-label="Bildirim sesi seçimi"></ul>
@@ -382,7 +382,7 @@
                 <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-upload"/></svg>
                 <span class="file-drop-text" id="sound-file-text">Dosya seçin</span>
               </label>
-              <p class="hint" id="sound-file-hint">En fazla 2 MB. Dosya tarayıcınızın localStorage alanına kaydedilir.</p>
+              <p class="hint" id="sound-file-hint">En fazla <span class="num">2</span> MB. Dosya tarayıcınızın localStorage alanına kaydedilir.</p>
             </div>
           </form>
         </div>

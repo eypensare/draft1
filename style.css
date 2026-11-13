@@ -30,7 +30,7 @@
   --radius-sm: 12px;
 
   --font-ui: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-num: 'JetBrains Mono', 'Inter', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-num: 'Comfortaa', 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
 
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --shadow-card: 0 30px 60px -30px rgba(0, 0, 0, 0.65), 0 2px 6px rgba(0, 0, 0, 0.25);
@@ -189,10 +189,17 @@ main:focus { outline: none; box-shadow: none; }
   display: flex; flex-direction: column; align-items: flex-end;
   padding-top: 4px;
   line-height: 1.25;
-  min-width: 9ch;
+  min-width: 10ch;
 }
-.clock-time { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 1.05rem; font-weight: 500; letter-spacing: -0.02em; }
+.clock-time { font-family: var(--font-num); font-optical-sizing: auto; font-style: normal; font-variant-numeric: tabular-nums; font-size: 1.05rem; font-weight: 500; letter-spacing: 0.01em; }
 .clock-date { font-size: 0.78rem; color: var(--muted); text-transform: capitalize; min-height: 1.25em; }
+
+.num {
+  font-family: var(--font-num);
+  font-optical-sizing: auto;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
 
 /* ---------- Ana alan & görünümler ---------- */
 .main {
@@ -255,7 +262,7 @@ main:focus { outline: none; box-shadow: none; }
 .hint { margin-top: 14px; font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
 .hint-top { margin: -4px 0 16px; }
 kbd {
-  font-family: var(--font-num);
+  font-family: var(--font-ui);
   font-size: 0.74rem;
   padding: 1px 6px;
   border-radius: 6px;
@@ -408,7 +415,7 @@ kbd {
 .range::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; border: 0; background: #F4F4F6; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); }
 .range:active::-webkit-slider-thumb { transform: scale(1.15); }
 .range-line { display: flex; align-items: center; gap: 12px; color: var(--muted); }
-.range-value { min-width: 4ch; text-align: right; font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 0.82rem; color: var(--text); }
+.range-value { min-width: 4.5ch; text-align: right; font-family: var(--font-num); font-optical-sizing: auto; font-style: normal; font-variant-numeric: tabular-nums; font-size: 0.82rem; font-weight: 500; color: var(--text); }
 
 /* Çipler & segmentli kontrol */
 .chips { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -419,8 +426,11 @@ kbd {
   background: var(--glass);
   box-shadow: var(--glass-inset);
   font-family: var(--font-num);
+  font-optical-sizing: auto;
+  font-style: normal;
   font-variant-numeric: tabular-nums;
-  font-size: 0.86rem;
+  font-size: 0.85rem;
+  font-weight: 500;
   color: var(--text);
   touch-action: manipulation;
   transition: background-color 0.3s var(--ease), color 0.3s var(--ease), transform 0.25s var(--ease);
@@ -472,7 +482,7 @@ kbd {
 .spin-btn:active { transform: scale(0.9); }
 .spin-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .spin-input {
-  width: 2.6ch;
+  width: 2.8ch;
   min-width: 0;
   padding: 0;
   border: 0;
@@ -480,23 +490,25 @@ kbd {
   background: transparent;
   text-align: center;
   font-family: var(--font-num);
+  font-optical-sizing: auto;
+  font-style: normal;
   font-variant-numeric: tabular-nums;
-  font-weight: 500;
-  font-size: clamp(2.2rem, 7vw, 3rem);
+  font-weight: 400;
+  font-size: clamp(2.1rem, 6.8vw, 2.85rem);
   line-height: 1.15;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.02em;
   color: var(--text);
   caret-color: var(--accent);
   box-sizing: content-box;
-  padding-inline: 0.2ch;
+  padding-inline: 0.25ch;
   transition: background-color 0.25s var(--ease);
 }
 .spin-input:hover:not(:disabled) { background: rgba(255, 255, 255, 0.04); }
 .spin-input:focus { background: rgba(255, 255, 255, 0.07); }
 .spin-input:disabled { color: var(--muted); }
-.spin-grid .spin-input { font-size: 2.2rem; }
+.spin-grid .spin-input { font-size: 2.1rem; }
 .spin-unit { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.04em; text-align: center; }
-.spin-sep { font-family: var(--font-num); font-size: clamp(1.8rem, 6vw, 2.4rem); color: var(--muted); padding-bottom: 20px; align-self: center; }
+.spin-sep { font-family: var(--font-num); font-optical-sizing: auto; font-style: normal; font-weight: 400; font-size: clamp(1.7rem, 5.5vw, 2.25rem); color: var(--muted); padding-bottom: 20px; align-self: center; }
 
 /* ---------- İlerleme halkası ---------- */
 .ring-card { display: flex; flex-direction: column; align-items: center; }
@@ -519,12 +531,12 @@ kbd {
   transition: stroke-dashoffset 0.4s linear, stroke 0.6s var(--ease);
 }
 .ring-center { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 6px; text-align: center; padding: 0 10%; }
-.digits { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-weight: 500; letter-spacing: -0.05em; line-height: 1; white-space: nowrap; }
-.digits-lg { font-size: clamp(1.9rem, 10vw, 2.6rem); }
-.digits-xl { font-size: clamp(2.6rem, 14vw, 3.8rem); }
+.digits { font-family: var(--font-num); font-optical-sizing: auto; font-style: normal; font-variant-numeric: tabular-nums; font-weight: 400; letter-spacing: -0.01em; line-height: 1; white-space: nowrap; }
+.digits-lg { font-size: clamp(1.75rem, 9vw, 2.35rem); }
+.digits-xl { font-size: clamp(2.4rem, 13vw, 3.5rem); }
 @supports (font-size: 1cqw) {
-  .digits-lg { font-size: 15cqw; }
-  .digits-xl { font-size: 21cqw; }
+  .digits-lg { font-size: 13.5cqw; }
+  .digits-xl { font-size: 19cqw; }
 }
 .ring-caption { font-size: 0.82rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; min-height: 1.4em; }
 
@@ -553,7 +565,7 @@ kbd {
   transition: opacity 0.3s var(--ease);
 }
 .alarm-info { display: grid; gap: 2px; min-width: 0; flex: 1; }
-.alarm-time { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 1.7rem; font-weight: 500; letter-spacing: -0.04em; line-height: 1.15; }
+.alarm-time { font-family: var(--font-num); font-optical-sizing: auto; font-style: normal; font-variant-numeric: tabular-nums; font-size: 1.65rem; font-weight: 400; letter-spacing: -0.01em; line-height: 1.15; }
 .alarm-meta { font-size: 0.82rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .alarm-item.is-off .alarm-time, .alarm-item.is-off .alarm-meta { opacity: 0.5; }
 
@@ -575,7 +587,7 @@ kbd {
 .task-text:hover:not(:disabled) { color: var(--accent); }
 .task-text:disabled { cursor: default; }
 .task.is-done .task-text { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(142, 146, 159, 0.6); }
-.task-pomos { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 0.78rem; color: var(--muted); }
+.task-pomos { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-num); font-optical-sizing: auto; font-style: normal; font-variant-numeric: tabular-nums; font-weight: 500; font-size: 0.78rem; color: var(--muted); }
 .task-pomos .icon { width: 14px; height: 14px; }
 
 .check { position: relative; display: inline-block; width: 24px; height: 24px; flex: none; }
