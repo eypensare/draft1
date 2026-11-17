@@ -937,7 +937,7 @@
       const day = this.dateFmt.format(now);
       if (this._lastDay !== day) {
         this._lastDay = day;
-        this.dateEl.replaceChildren(...withNums(day));
+        this.dateEl.textContent = day;
       }
       Bus.emit('second', now);
       setTimeout(() => this.tick(), 1000 - now.getMilliseconds() + 5);
